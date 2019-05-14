@@ -15,7 +15,7 @@ module.exports = class Cart {
     
     fs.readFile(p, (err, fileContent) => {
       let cart = { products: [], totalPrice: 0 };
-      if(!err) {
+      if(!err) { // if we don't have an error we know we got an existing cart
         cart = JSON.parse(fileContent);
       }
       // Analyze the cart => Find existing product
@@ -23,6 +23,7 @@ module.exports = class Cart {
       const existingProduct = cart.products[existingProductIndex];
 
       let updatedProduct;
+      // Add new product/increase quantity
       if(existingProduct){
         updatedProduct = { ...existingProduct };
         updatedProduct.qty = updatedProduct.qty + 1;
