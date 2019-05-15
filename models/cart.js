@@ -65,7 +65,7 @@ module.exports = class Cart {
       const cart = JSON.parse(fileContent);
       if (err) {
         cb(null)
-      } else {
+      } else { 
         cb(cart);
       }  
     });
