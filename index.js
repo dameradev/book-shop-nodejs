@@ -4,7 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 
 const errorController = require('./controllers/error');
-const db = require('./util/database');
+const sequalize = require('./util/database');
 
 const app = express();
 
@@ -25,5 +25,12 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
+sequalize.sync() // syncs models to tables into the database
+.then(result => {
+  // console.log(result);
+  app.listen(3000);
+})
+.then(err=>console.log(err));
 
-app.listen(3000);
+
+
