@@ -4,9 +4,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const errorController = require("./controllers/error");
-const mongoConnect = require("./util/database").mongoConnect;
-// const getDb = require('./util/database').getDb;
-const mongodb = require("mongodb");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -36,14 +34,9 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect(async req => {
-  // let user = await User.findById("5ce14518e10db910805e7c0d");
-  //   if(req.user) {
-  //     return re.user;
-  //   } else{
-  //     user = new User('dameradev', 'dame@radev.com');
-  //     user.save();
-  //     return user;
-  // }
-  app.listen(3000);
-});
+mongoose
+  .connect("mongodb://localhost/shop", { useNewUrlParser: true })
+  .then(result => {
+    app.listen(3000);
+  })
+  .catch(err => console.log(err));
