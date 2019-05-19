@@ -25,13 +25,12 @@ app.use(bodyParser.urlencoded({extended: false}))
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((req, res, next) => {
-  User.findByPk("5ce14518e10db910805e7c0d")
+  User.findById("5ce14518e10db910805e7c0d")
   .then(user => {
     req.user = user;
     next();
   })
   .catch(err=>console.log(err));
-  next();
 });
 
 

@@ -20,14 +20,13 @@ class User {
 
   static findById(userId){ 
     const db = getDb();
-    db.collection('users')
-      .find({_id: new mongodb.ObjectID(userId)})
-      .next()
+    return db.collection('users')
+      .findOne({_id: new mongodb.ObjectID(userId)})
       .then(user=> {
-      return user
+        console.log(user)
+        return user;
       })
       .catch(err=>console.log(err));
   }
 }
-
 module.exports = User;
