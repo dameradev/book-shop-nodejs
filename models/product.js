@@ -7,7 +7,7 @@ class Product {
     this.price = price;
     this.description = description;
     this.imageUrl = imageUrl;
-    this._id = new mongodb.ObjectId(id);
+    this._id = id ?  new mongodb.ObjectId(id) : null;
   }
   save() {
     const db = getDb();
@@ -48,7 +48,6 @@ class Product {
     .find({_id: new mongodb.ObjectId(id)})
     .next()
     .then(product=> {
-      console.log("PRODUCT", product);
       return product;
     })
     .catch(err=>console.log(err));
