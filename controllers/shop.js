@@ -85,14 +85,14 @@ exports.postOrder = (req, res, next) => {
 };
 
 exports.getOrders = (req, res, next) => {
-  //   req.user
-  //     .getOrders({include: ['products']})
-  //     .then(orders => {
-  //       res.render('shop/orders', {
-  //         orders: orders,
-  //         path: '/orders',
-  //         pageTitle: 'Your Orders'
-  //       });
-  //     })
-  //     .catch(err=>console.log(err));
+  req.user
+    .getOrders({ include: ["products"] })
+    .then(orders => {
+      res.render("shop/orders", {
+        orders: orders,
+        path: "/orders",
+        pageTitle: "Your Orders"
+      });
+    })
+    .catch(err => console.log(err));
 };
