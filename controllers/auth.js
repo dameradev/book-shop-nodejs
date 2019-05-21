@@ -1,18 +1,22 @@
+const User = require("../models/user");
 exports.getLogin = (req, res, next) => {
-  const isLoggedIn = req
-    .get("Cookie")
-    .split(";")[2]
-    .trim()
-    .split("=")[1];
-
+  // const isLoggedIn = req
+  //   .get("Cookie")
+  //   .split(";")[2]
+  //   .trim()
+  //   .split("=")[1];
+  console.log(req.session.isLoggedIn);
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Log in",
-    isAuthenticated: isLoggedIn
+    isAuthenticated: false
   });
 };
 
-exports.postLogin = (req, res, next) => {
-  res.cookie("loggedIn", true);
+exports.postLogin = async (req, res, next) => {
+  const user = await User.findById("5ce19df5ce6fbe30492fb511");
+
+  req.session.user = user;
+  req.session.isLoggedIn = true;
   res.redirect("/");
 };
