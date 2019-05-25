@@ -8,7 +8,7 @@ const User = require("../models/user");
 
 const transporter = nodemailer.createTransport(sendgridTransport({
   auth: {
-    api_key: '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'
+    api_key: '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'
   }
 }));
 
@@ -126,27 +126,28 @@ exports.getReset = (req, res, next) => {
   });
 }
 
-exports.postReset = (res,req,next) => {
+exports.postReset = (req,res,next) => {
+  const email = req.body.email;
   crypto.randomBytes(32, (err, buffer) => {
-    if(err){
+    if(err) {
       console.log(err);
       return res.redirect('/reset')
     }
     const token = buffer.toString('hex');
-    User.findOne({email: req.body.email})
+    User.findOne({email})
     .then(user =>{
       if(!user) {
         req.flash('error', 'No account with that email found');
         return res.redirect('/reset');
       }
       user.resetToken = token;
-      user.resetTokenExpiration: Date.now() + 3600000;
+      user.resetTokenExpiration = Date.now() + 3600000;
       return user.save();
     })
     .then(result => {
       res.redirect('/')
-      transporter.sendMail({
-        to: req.body.email,
+      return transporter.sendMail({
+        to: email,
         from: 'show@node-complete.com',
         subject: "Password reset",
         html: `
@@ -155,6 +156,8 @@ exports.postReset = (res,req,next) => {
         `
       });
     })
-    .catch(err=>console.log(err));
-  })
+    .catch(err=>{
+      console.log(err)
+    });
+  });
 }
