@@ -1,3 +1,4 @@
+const { validationResult } = require("express-validator/check");
 const Product = require("../models/product");
 
 exports.getAddProduct = (req, res, next) => {
@@ -5,7 +6,10 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isAuthenticated: req.session.isLoggedIn
+    hasError: false,
+    isAuthenticated: req.session.isLoggedIn,
+    errorMessage: "",
+    validationErrors: []
   });
 };
 
@@ -14,6 +18,25 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: false,
+      hasError: true,
+      isAuthenticated: req.session.isLoggedIn,
+      errorMessage: errors.array()[0].msg,
+      product: {
+        title,
+        imageUrl,
+        price,
+        description
+      },
+      validationErrors: errors.array()
+    });
+  }
+
   const product = new Product({
     title,
     imageUrl,
@@ -46,9 +69,12 @@ exports.getEditProduct = (req, res, next) => {
       res.render("admin/edit-product", {
         pageTitle: "Edit Product",
         path: "/admin/edit-product",
-        editing: editMode,
+        editing: true,
+        hasError: false,
         product: product,
-        isAuthenticated: req.session.isLoggedIn
+        errorMessage: "",
+        isAuthenticated: req.session.isLoggedIn,
+        validationErrors: []
       });
     })
     .catch(err => console.log(err));
@@ -61,6 +87,25 @@ exports.postEditProduct = (req, res, next) => {
   const updatedDesc = req.body.description;
   const updatedPrice = req.body.price;
 
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render("admin/edit-product", {
+      pageTitle: "Add Product",
+      path: "/admin/add-product",
+      editing: true,
+      hasError: true,
+      isAuthenticated: req.session.isLoggedIn,
+      errorMessage: errors.array()[0].msg,
+      product: {
+        title: updatedTitle,
+        imageUrl: updatedImageUrl,
+        price: updatedPrice,
+        description: updatedDesc,
+        _id: prodId
+      },
+      validationErrors: errors.array()
+    });
+  }
   Product.findById(prodId)
     .then(product => {
       if (product.userId.toString() !== req.user._id.toString()) {
