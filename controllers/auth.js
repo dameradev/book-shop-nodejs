@@ -44,27 +44,9 @@ exports.postLogin = (req, res, next) => {
       validationErrors: errors.array()
     });
   }
-  User.findOne({ email }).then(user => {
-    if (!user) {
-      return res.status(422).render("auth/login", {
-        path: "/login",
-        pageTitle: "Login",
-        errorMessage: "Invalid email or password.",
-        oldInput: { email, password },
-        validationErrors: []
-      });
-    }
-    bcrypt
-      .compare(password, user.password)
-      .then(doMatch => {
-        if (doMatch) {
-          req.session.isLoggedIn = true;
-          req.session.user = user;
-          return req.session.save(err => {
-            console.log(err);
-            res.redirect("/");
-          });
-        }
+  User.findOne({ email })
+    .then(user => {
+      if (!user) {
         return res.status(422).render("auth/login", {
           path: "/login",
           pageTitle: "Login",
@@ -72,12 +54,36 @@ exports.postLogin = (req, res, next) => {
           oldInput: { email, password },
           validationErrors: []
         });
-      })
-      .catch(err => {
-        console.log(err);
-        res.redirect("/login");
-      });
-  });
+      }
+      bcrypt
+        .compare(password, user.password)
+        .then(doMatch => {
+          if (doMatch) {
+            req.session.isLoggedIn = true;
+            req.session.user = user;
+            return req.session.save(err => {
+              console.log(err);
+              res.redirect("/");
+            });
+          }
+          return res.status(422).render("auth/login", {
+            path: "/login",
+            pageTitle: "Login",
+            errorMessage: "Invalid email or password.",
+            oldInput: { email, password },
+            validationErrors: []
+          });
+        })
+        .catch(err => {
+          console.log(err);
+          res.redirect("/login");
+        });
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
 };
 
 exports.getSignup = (req, res, next) => {
@@ -130,7 +136,11 @@ exports.postSignup = (req, res, next) => {
         html: "<h1>You've successfuly signed up."
       });
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
 };
 
 exports.postLogout = (req, res, next) => {
@@ -156,38 +166,46 @@ exports.getReset = (req, res, next) => {
 
 exports.postReset = (req, res, next) => {
   const email = req.body.email;
-  crypto.randomBytes(32, (err, buffer) => {
-    if (err) {
-      console.log(err);
-      return res.redirect("/reset");
-    }
-    const token = buffer.toString("hex");
-    User.findOne({ email })
-      .then(user => {
-        if (!user) {
-          req.flash("error", "No account with that email found");
-          return res.redirect("/reset");
-        }
-        user.resetToken = token;
-        user.resetTokenExpiration = Date.now() + 3600000;
-        return user.save();
-      })
-      .then(result => {
-        res.redirect("/");
-        return transporter.sendMail({
-          to: email,
-          from: "show@node-complete.com",
-          subject: "Password reset",
-          html: `
+  crypto
+    .randomBytes(32, (err, buffer) => {
+      if (err) {
+        console.log(err);
+        return res.redirect("/reset");
+      }
+      const token = buffer.toString("hex");
+      User.findOne({ email })
+        .then(user => {
+          if (!user) {
+            req.flash("error", "No account with that email found");
+            return res.redirect("/reset");
+          }
+          user.resetToken = token;
+          user.resetTokenExpiration = Date.now() + 3600000;
+          return user.save();
+        })
+        .then(result => {
+          res.redirect("/");
+          return transporter.sendMail({
+            to: email,
+            from: "show@node-complete.com",
+            subject: "Password reset",
+            html: `
           <p>You've requested a password reset</p>
           <p>Click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password</p>
         `
+          });
+        })
+        .catch(err => {
+          const error = new Error(err);
+          error.httpStatusCode = 500;
+          return next(err);
         });
-      })
-      .catch(err => {
-        console.log(err);
-      });
-  });
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
 };
 
 exports.getNewPassword = (req, res, next) => {
@@ -208,7 +226,11 @@ exports.getNewPassword = (req, res, next) => {
         passwordToken: token
       });
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
 };
 
 exports.postNewPassword = (req, res, next) => {
@@ -234,5 +256,9 @@ exports.postNewPassword = (req, res, next) => {
     .then(result => {
       res.redirect("/login");
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
 };
