@@ -21,9 +21,6 @@ router.post(
       .isString()
       .isLength({ min: 3 })
       .trim(),
-    body("imageUrl")
-      .isURL()
-      .withMessage("Image url must be a valid url."),
     body("price")
       .isFloat()
       .withMessage("Price must be with decimal places."),
