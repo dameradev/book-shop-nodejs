@@ -165,7 +165,6 @@ exports.postEditProduct = (req, res, next) => {
 exports.getProducts = (req, res, next) => {
   Product.find({ userId: req.user._id })
     .then(products => {
-      console.log(products);
       res.render("admin/products", {
         prods: products,
         pageTitle: "Admin Products",
