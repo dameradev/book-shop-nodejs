@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
+const stripe = require("stripe")("sk_test_4WjBelrKcLjQ3DZrV7OzcDEv");
 const PDFDocument = require("pdfkit");
 
 const Product = require("../models/product");
@@ -141,24 +142,64 @@ exports.postCartDeleteProduct = (req, res, next) => {
     });
 };
 
-exports.postOrder = async (req, res, next) => {
-  const user = await req.user.populate("cart.items.productId").execPopulate();
-  let products = user.cart.items;
+exports.getCheckout = (req, res, next) => {
+  req.user
+    .populate("cart.items.productId")
+    .execPopulate()
+    .then(user => {
+      console.log(user.cart.items);
+      const products = user.cart.items;
+      let total = 0;
+      products.forEach(p => {
+        total += p.quantity * p.productId.price;
+      });
+      res.render("shop/checkout", {
+        path: "/checkout",
+        pageTitle: "Checkout",
+        products: products,
+        totalSum: total
+      });
+    })
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
+};
+exports.postOrder = (req, res, next) => {
+  // Token is created using Checkout or Elements!
+  // Get the payment token ID submitted by the form:
+  const token = req.body.stripeToken; // Using Express
+  let totalSum = 0;
 
-  products = products.map(i => {
-    return { quantity: i.quantity, product: { ...i.productId._doc } };
-  });
-  const order = new Order({
-    user: {
-      email: req.user.email,
-      userId: req.user
-    },
-    products
-  });
+  req.user
+    .populate("cart.items.productId")
+    .execPopulate()
+    .then(user => {
+      user.cart.items.forEach(p => {
+        totalSum += p.quantity * p.productId.price;
+      });
 
-  order
-    .save()
+      const products = user.cart.items.map(i => {
+        return { quantity: i.quantity, product: { ...i.productId._doc } };
+      });
+      const order = new Order({
+        user: {
+          email: req.user.email,
+          userId: req.user
+        },
+        products: products
+      });
+      return order.save();
+    })
     .then(result => {
+      const charge = stripe.charges.create({
+        amount: 25.99,
+        currency: "usd",
+        description: "Demo Order",
+        source: token,
+        metadata: { order_id: result._id.toString() }
+      });
       return req.user.clearCart();
     })
     .then(() => {
@@ -167,7 +208,7 @@ exports.postOrder = async (req, res, next) => {
     .catch(err => {
       const error = new Error(err);
       error.httpStatusCode = 500;
-      return next(err);
+      return next(error);
     });
 };
 
