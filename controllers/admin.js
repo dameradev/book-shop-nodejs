@@ -179,19 +179,16 @@ exports.getProducts = (req, res, next) => {
     });
 };
 
-exports.postDeleteProduct = async (req, res, next) => {
-  const prodId = req.body.productId;
+exports.deleteProduct = async (req, res, next) => {
+  const prodId = req.params.productId;
   const product = await Product.findById(prodId);
   await fileHelper.deleteFile(product.imageUrl);
   Product.deleteOne({ _id: prodId, userId: req.user._id })
-
     .then(() => {
       console.log("Destroyed product");
-      res.redirect("/admin/products");
+      res.status(200).json({ message: "Success!" });
     })
     .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(err);
+      res.status(500).json({ message: "Deleting product failed" });
     });
 };
