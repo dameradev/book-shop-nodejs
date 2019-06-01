@@ -1,11 +1,13 @@
 const mongoose = require("mongoose");
 const { validationResult } = require("express-validator/check");
 
+const countCartItems = require("../util/cartItems");
 const fileHelper = require("../util/file");
 
 const Product = require("../models/product");
 
 exports.getAddProduct = (req, res, next) => {
+  const cartItems = countCartItems(req.user);
   res.render("admin/edit-product", {
     pageTitle: "Add Product",
     path: "/admin/add-product",
@@ -13,7 +15,8 @@ exports.getAddProduct = (req, res, next) => {
     hasError: false,
     isAuthenticated: req.session.isLoggedIn,
     errorMessage: "",
-    validationErrors: []
+    validationErrors: [],
+    cartItems
   });
 };
 
@@ -83,6 +86,7 @@ exports.postAddProduct = (req, res, next) => {
 };
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
+  const cartItems = countCartItems(req.user);
   if (!editMode) {
     res.redirect("/");
   }
@@ -101,7 +105,8 @@ exports.getEditProduct = (req, res, next) => {
         product: product,
         errorMessage: "",
         isAuthenticated: req.session.isLoggedIn,
-        validationErrors: []
+        validationErrors: [],
+        cartItems
       });
     })
     .catch(err => {
@@ -163,13 +168,15 @@ exports.postEditProduct = (req, res, next) => {
 };
 
 exports.getProducts = (req, res, next) => {
+  const cartItems = countCartItems(req.user);
   Product.find({ userId: req.user._id })
     .then(products => {
       res.render("admin/products", {
         prods: products,
         pageTitle: "Admin Products",
         path: "/admin/products",
-        isAuthenticated: req.session.isLoggedIn
+        isAuthenticated: req.session.isLoggedIn,
+        cartItems
       });
     })
     .catch(err => {

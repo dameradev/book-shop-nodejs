@@ -4,6 +4,8 @@ const path = require("path");
 const stripe = require("stripe")("sk_test_4WjBelrKcLjQ3DZrV7OzcDEv");
 const PDFDocument = require("pdfkit");
 
+const countCartItems = require("../util/cartItems");
+
 const Product = require("../models/product");
 const Order = require("../models/order");
 
@@ -12,6 +14,7 @@ const ITEMS_PER_PAGE = 1;
 exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;
   let totalItems;
+  const cartItems = countCartItems(req.user);
   Product.find()
     .countDocuments()
     .then(numProducts => {
@@ -30,7 +33,8 @@ exports.getProducts = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+        cartItems
       });
     })
     .catch(err => {
@@ -42,13 +46,15 @@ exports.getProducts = (req, res, next) => {
 
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
+  const cartItems = countCartItems(req.user);
   Product.findById(prodId)
     .then(product => {
       res.render("shop/product-detail", {
         product: product,
         pageTitle: product.title,
         path: "/products",
-        isAuthenticated: req.session.isLoggedIn
+        isAuthenticated: req.session.isLoggedIn,
+        cartItems
       });
     })
     .catch(err => {
@@ -61,6 +67,9 @@ exports.getProduct = (req, res, next) => {
 exports.getIndex = (req, res, next) => {
   const page = +req.query.page || 1;
   let totalItems;
+
+  const cartItems = countCartItems(req.user);
+
   Product.find()
     .countDocuments()
     .then(numProducts => {
@@ -79,7 +88,8 @@ exports.getIndex = (req, res, next) => {
         hasPreviousPage: page > 1,
         nextPage: page + 1,
         previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE)
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+        cartItems
       });
     })
     .catch(err => {
@@ -90,6 +100,7 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
+  const cartItems = countCartItems(req.user);
   req.user
     .populate("cart.items.productId")
     .execPopulate()
@@ -101,7 +112,8 @@ exports.getCart = (req, res, next) => {
           path: "/cart",
           pageTitle: "Your Cart",
           products: products,
-          isAuthenticated: req.session.isLoggedIn
+          isAuthenticated: req.session.isLoggedIn,
+          cartItems
         })
         .catch(err => {
           const error = new Error(err);
@@ -143,6 +155,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
 };
 
 exports.getCheckout = (req, res, next) => {
+  const cartItems = countCartItems(req.user);
   req.user
     .populate("cart.items.productId")
     .execPopulate()
@@ -157,7 +170,8 @@ exports.getCheckout = (req, res, next) => {
         path: "/checkout",
         pageTitle: "Checkout",
         products: products,
-        totalSum: total
+        totalSum: total,
+        cartItems
       });
     })
     .catch(err => {
@@ -213,13 +227,15 @@ exports.postOrder = (req, res, next) => {
 };
 
 exports.getOrders = (req, res, next) => {
+  const cartItems = countCartItems(req.user);
   Order.find({ "user.userId": req.session.user._id })
     .then(orders => {
       res.render("shop/orders", {
         orders: orders,
         path: "/orders",
         pageTitle: "Your Orders",
-        isAuthenticated: req.session.isLoggedIn
+        isAuthenticated: req.session.isLoggedIn,
+        cartItems
       });
     })
     .catch(err => {
