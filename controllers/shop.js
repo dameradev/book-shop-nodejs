@@ -9,7 +9,7 @@ const countCartItems = require("../util/cartItems");
 const Product = require("../models/product");
 const Order = require("../models/order");
 
-const ITEMS_PER_PAGE = 1;
+const ITEMS_PER_PAGE = 2;
 
 exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;
@@ -67,9 +67,9 @@ exports.getProduct = (req, res, next) => {
 exports.getIndex = (req, res, next) => {
   const page = +req.query.page || 1;
   let totalItems;
-
+  
   const cartItems = countCartItems(req.user);
-
+  
   Product.find()
     .countDocuments()
     .then(numProducts => {
@@ -101,12 +101,13 @@ exports.getIndex = (req, res, next) => {
 
 exports.getCart = (req, res, next) => {
   const cartItems = countCartItems(req.user);
+  
   req.user
-    .populate("cart.items.productId")
-    .execPopulate()
+    .deepPopulate("cart.items.productId")
     .then(user => {
-      console.log(user.cart.items);
+      // console.log(user.cart.items);
       const products = user.cart.items;
+      console.log(products);
       res
         .render("shop/cart", {
           path: "/cart",
@@ -115,21 +116,18 @@ exports.getCart = (req, res, next) => {
           isAuthenticated: req.session.isLoggedIn,
           cartItems
         })
-        .catch(err => {
-          const error = new Error(err);
-          error.httpStatusCode = 500;
-          return next(err);
-        });
     })
     .catch(err => {
       const error = new Error(err);
       error.httpStatusCode = 500;
       return next(err);
     });
+  
 };
 
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
+  
   Product.findById(prodId)
     .then(product => {
       return req.user.addToCart(product);
@@ -166,6 +164,7 @@ exports.getCheckout = (req, res, next) => {
       products.forEach(p => {
         total += p.quantity * p.productId.price;
       });
+      total = total.toFixed(2)
       res.render("shop/checkout", {
         path: "/checkout",
         pageTitle: "Checkout",

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+var deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 const Schema = mongoose.Schema;
 
@@ -26,6 +27,8 @@ const userSchema = new Schema({
     ]
   }
 });
+
+userSchema.plugin(deepPopulate /* more on options below */);
 
 userSchema.methods.addToCart = function(product) {
   const cartProductIndex = this.cart.items.findIndex(cp => {
