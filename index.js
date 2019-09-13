@@ -1,4 +1,11 @@
-const MONGODB_URI = "mongodb://localhost/shop";
+const MONGODB_URI =
+  "mongodb+srv://" +
+  process.env.MONGO_USER +
+  ":" +
+  process.env.MONGO_PASSWORD +
+  "@cluster0-liy1k.mongodb.net/" +
+  process.env.MONGO_DEFAULT_DATABASE +
+  "?retryWrites=true&w=majority";
 const path = require("path");
 
 const express = require("express");
@@ -9,11 +16,13 @@ const MongoDBStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 const flash = require("connect-flash");
 const multer = require("multer");
+const helmet = require("helmet");
 
 const errorController = require("./controllers/error");
 const shopController = require("./controllers/shop");
 const isAuth = require("./middleware/is-auth");
 
+// require("dotenv").config();
 const app = express();
 const store = new MongoDBStore({
   uri: MONGODB_URI,
@@ -51,7 +60,7 @@ const User = require("./models/user");
 const adminRoutes = require("./routes/admin");
 const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
-
+app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(multer({ storage: fileStorage, fileFilter }).single("image"));
 app.use(express.static(path.join(__dirname, "public")));
@@ -116,6 +125,6 @@ app.use((error, req, res, next) => {
 mongoose
   .connect(MONGODB_URI, { useNewUrlParser: true })
   .then(result => {
-    app.listen(3002);
+    app.listen(process.env.PORT || 3000);
   })
   .catch(err => console.log(err));
