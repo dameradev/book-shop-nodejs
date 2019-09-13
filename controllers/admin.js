@@ -25,6 +25,9 @@ exports.postAddProduct = (req, res, next) => {
   const image = req.file;
   const price = req.body.price;
   const description = req.body.description;
+  const code = req.body.code;
+  const length = req.body.length;
+  console.log(code,length)
 
   if (!image) {
     return res.status(422).render("admin/edit-product", {
@@ -37,7 +40,9 @@ exports.postAddProduct = (req, res, next) => {
       product: {
         title,
         price,
-        description
+        description,
+        code,
+        length
       },
       validationErrors: []
     });
@@ -55,7 +60,9 @@ exports.postAddProduct = (req, res, next) => {
       product: {
         title,
         price,
-        description
+        description,
+        code,
+        length
       },
       validationErrors: errors.array()
     });
@@ -70,7 +77,9 @@ exports.postAddProduct = (req, res, next) => {
     imageUrl,
     price,
     description,
-    userId: req.user
+    userId: req.user,
+    code,
+    length
   });
   product
     .save()
@@ -122,6 +131,8 @@ exports.postEditProduct = (req, res, next) => {
   const image = req.file;
   const updatedDesc = req.body.description;
   const updatedPrice = req.body.price;
+  const updatedCode = req.body.code;
+  const updatedLength = req.body.length;
 
   const errors = validationResult(req);
 
@@ -137,6 +148,8 @@ exports.postEditProduct = (req, res, next) => {
         title: updatedTitle,
         price: updatedPrice,
         description: updatedDesc,
+        code: updatedCode,
+        length: updatedLength,
         _id: prodId
       },
       validationErrors: errors.array()
@@ -150,7 +163,8 @@ exports.postEditProduct = (req, res, next) => {
       product.title = updatedTitle;
       product.description = updatedDesc;
       product.price = updatedPrice;
-
+      product.code = updatedCode;
+      product.length = updatedLength;
       if (image) {
         product.imageUrl = image.path;
       }
@@ -162,6 +176,7 @@ exports.postEditProduct = (req, res, next) => {
     })
     .catch(err => {
       const error = new Error(err);
+      console.log(err)
       error.httpStatusCode = 500;
       return next(err);
     });

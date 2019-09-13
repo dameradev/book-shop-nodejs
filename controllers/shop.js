@@ -12,9 +12,14 @@ const Order = require("../models/order");
 const ITEMS_PER_PAGE = 2;
 
 exports.getProducts = (req, res, next) => {
+  if (req.user === undefined) {
+    return res.redirect('/signup?message="Register or login to view products"');
+  }
+
   const page = +req.query.page || 1;
   let totalItems;
   const cartItems = countCartItems(req.user);
+
   Product.find()
     .countDocuments()
     .then(numProducts => {
@@ -46,6 +51,7 @@ exports.getProducts = (req, res, next) => {
 
 exports.getProduct = (req, res, next) => {
   const prodId = req.params.productId;
+
   const cartItems = countCartItems(req.user);
   Product.findById(prodId)
     .then(product => {
@@ -53,6 +59,68 @@ exports.getProduct = (req, res, next) => {
         product: product,
         pageTitle: product.title,
         path: "/products",
+        isAuthenticated: req.session.isLoggedIn,
+        cartItems
+      });
+      console.log(product);
+    })
+
+    .catch(err => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      return next(err);
+    });
+};
+
+exports.getIndex = (req, res, next) => {
+  // const page = +req.query.page || 1;
+  let totalItems;
+
+  // const cartItems = countCartItems(req.user);
+
+  // Product.find()
+  //   .countDocuments()
+  //   .then(numProducts => {
+  //     totalItems = numProducts;
+  //     return Product.find()
+  //       .skip((page - 1) * ITEMS_PER_PAGE)
+  //       .limit(ITEMS_PER_PAGE);
+  //   })
+  //   .then(products => {
+  //     console.log(products);
+  res.render("shop/index", {
+    // prods: products,
+    pageTitle: "Shop",
+    path: "/"
+    // currentPage: page,
+    // hasNextPage: ITEMS_PER_PAGE * page < totalItems,
+    // hasPreviousPage: page > 1,
+    // nextPage: page + 1,
+    // previousPage: page - 1,
+    // lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+    // cartItems
+  });
+  // })
+  // .catch(err => {
+  //   const error = new Error(err);
+  //   error.httpStatusCode = 500;
+  //   return next(err);
+  // });
+};
+
+exports.getCart = (req, res, next) => {
+  const cartItems = countCartItems(req.user);
+
+  req.user
+    .deepPopulate("cart.items.productId")
+    .then(user => {
+      // console.log(user.cart.items);
+      const products = user.cart.items;
+      console.log(products);
+      res.render("shop/cart", {
+        path: "/cart",
+        pageTitle: "Your Cart",
+        products: products,
         isAuthenticated: req.session.isLoggedIn,
         cartItems
       });
@@ -64,70 +132,9 @@ exports.getProduct = (req, res, next) => {
     });
 };
 
-exports.getIndex = (req, res, next) => {
-  const page = +req.query.page || 1;
-  let totalItems;
-  
-  const cartItems = countCartItems(req.user);
-  
-  Product.find()
-    .countDocuments()
-    .then(numProducts => {
-      totalItems = numProducts;
-      return Product.find()
-        .skip((page - 1) * ITEMS_PER_PAGE)
-        .limit(ITEMS_PER_PAGE);
-    })
-    .then(products => {
-      res.render("shop/index", {
-        prods: products,
-        pageTitle: "Shop",
-        path: "/",
-        currentPage: page,
-        hasNextPage: ITEMS_PER_PAGE * page < totalItems,
-        hasPreviousPage: page > 1,
-        nextPage: page + 1,
-        previousPage: page - 1,
-        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
-        cartItems
-      });
-    })
-    .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(err);
-    });
-};
-
-exports.getCart = (req, res, next) => {
-  const cartItems = countCartItems(req.user);
-  
-  req.user
-    .deepPopulate("cart.items.productId")
-    .then(user => {
-      // console.log(user.cart.items);
-      const products = user.cart.items;
-      console.log(products);
-      res
-        .render("shop/cart", {
-          path: "/cart",
-          pageTitle: "Your Cart",
-          products: products,
-          isAuthenticated: req.session.isLoggedIn,
-          cartItems
-        })
-    })
-    .catch(err => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      return next(err);
-    });
-  
-};
-
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
-  
+
   Product.findById(prodId)
     .then(product => {
       return req.user.addToCart(product);
@@ -164,7 +171,7 @@ exports.getCheckout = (req, res, next) => {
       products.forEach(p => {
         total += p.quantity * p.productId.price;
       });
-      total = total.toFixed(2)
+      total = total.toFixed(2);
       res.render("shop/checkout", {
         path: "/checkout",
         pageTitle: "Checkout",

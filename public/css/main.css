@@ -286,3 +286,26 @@ form {
   }
 }
 
+footer {
+  background: #00695c;
+
+  bottom: 0;
+}
+
+footer .footer-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+footer .footer-nav li {
+  display: block;
+  width: 20%;
+  margin: 0 auto;
+  text-align: center;
+  height: 2rem;
+  padding: 5px 0;
+}
+footer .footer-nav li a {
+  color: white;
+  text-decoration: none;
+}
